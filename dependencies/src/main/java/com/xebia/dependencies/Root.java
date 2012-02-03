@@ -88,25 +88,33 @@ public class Root {
 	}
 
 	public void readFile(String fileName) throws IOException {
+		Map<String, String[]> tempStore = parseFile(fileName);
+		addItemsWithoutReachables(tempStore);
+		addReachablesToPlainItems(tempStore);
+	}
+
+	private Map<String, String[]> parseFile(String fileName) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(fileName)));
 		String line;
 		Map<String, String[]> tempStore = new HashMap<String, String[]>();
 		while ((line = reader.readLine()) != null) {
 			String[] parts = line.split("->");
 			String itemId = parts[0];
-			String referencdIds = "";
-			if (parts.length > 1) {
-				referencdIds = parts[1];
-				String[] ids = referencdIds.split(",");
-				tempStore.put(itemId, ids);
+			if (!itemId.equals("")) {
+				if (parts.length > 1) {
+					String[] ids = parts[1].split(",");
+					tempStore.put(itemId, ids);
+				} else {
+					tempStore.put(itemId, null);
+				}
 			} else {
-				tempStore.put(itemId, null);
+				System.out.println("Warning: no Id found in line: " + line);
 			}
 		}
-		for (String id : tempStore.keySet()) {
-			Item item = new Item(id);
-			getAllItems().add(item);
-		}
+		return tempStore;
+	}
+
+	private void addReachablesToPlainItems(Map<String, String[]> tempStore) {
 		for (String id : tempStore.keySet()) {
 			Item item = lookupItemById(id);
 			String[] idsOfReachableItems = tempStore.get(id);
@@ -116,6 +124,13 @@ public class Root {
 					item.getReachableIems().add(reachable);
 				}
 			}
+		}
+	}
+
+	private void addItemsWithoutReachables(Map<String, String[]> tempStore) {
+		for (String id : tempStore.keySet()) {
+			Item item = new Item(id);
+			getAllItems().add(item);
 		}
 	}
 
