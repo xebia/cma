@@ -1,0 +1,16 @@
+Intake.UI is a WebUIService
+Intake.Application is a JavaApplication
+Intake.IntakeDataSource is a DataSource
+Intake.IntakeDataSourceNonJTA is a DataSource
+
+Intake.UI contextroot : "/dzs/wmoportaal/plateau1/wmointake"
+Intake.UI is implemented by Intake.Application
+
+Intake.UI depends on SubjectMagazijn.ProxyWebService
+Intake.UI depends on ZaakMagazijn.ProxyWebService
+Intake.UI depends on PostcodeCheck.ProxyWebService
+Intake.UI depends on Taken.ProxyWebService
+Intake.UI depends on Portaal.WebUIService
+
+Intake.Application depends on Intake.IntakeDataSource
+Intake.Application depends on Intake.IntakeDataSourceNonJTA

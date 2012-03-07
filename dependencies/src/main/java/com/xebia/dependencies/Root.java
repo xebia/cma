@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,8 +23,8 @@ public class Root {
 		return allItems;
 	}
 
-	public void setAllItems(List<Item> allItems) {
-		this.allItems = allItems;
+	public void setAllItems(Collection<Item> allItems) {
+		this.allItems.addAll(allItems);
 	}
 	
 	public static void main(String[] args) {
@@ -134,7 +135,7 @@ public class Root {
 		}
 	}
 
-	private Item lookupItemById(String id) {
+	public Item lookupItemById(String id) {
 		List<Item> allItems = getAllItems();
 		if (allItems == null || allItems.size() == 0) {
 			throw new RuntimeException("Item with id: " + id + " is referenced but not defined");

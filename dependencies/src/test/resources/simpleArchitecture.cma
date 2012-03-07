@@ -1,0 +1,42 @@
+System PUB
+
+hardware components:
+loadbalancer: id: "F5", type: "F5", availability according to manufacturer: 99.999, historic availability: 99.95
+host: id: "pub_host_1", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.98
+host: id: "pub_host_2", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.97
+host: id: "pub_host_3", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.99
+host: id: "pub_host_4", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.999
+host: id: "pub_host_5", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.81
+storage: id: "pub_san", type: "Dell PowerVault MD3600i/MD3620i iSCSI SAN", availability according to manufacturer: 99.9999, historic availability: 99.91
+switch: id: "BNS_switch", type: "Cisco Nexus 7000 Series", availability according to manufacturer: 99.999, historic availability: 99.999999
+host: id: "ora_host_1", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.99
+host: id: "ora_host_2", type: "Dell PowerEdge 2950", availability according to manufacturer: 99.99, historic availability: 99.999
+
+software components:
+application: id: "pub", type: "J2E"
+application: id: "bpm", type: "J2E"
+application: id: "cris", type: "J2E"
+application: id: "harm", type: "J2E"
+application: id: "vidi", type: "SQL"
+
+middleware components:
+application server: id: "weblogic 10.3",..........
+
+database components:
+database: id: "pub_schema", type: "Oracle 11g", configuration: "RAC", availability according to manufacturer: 99.9999, historic availability: 99.45
+
+dependencies:
+pub->cris, bpm
+cris->harm
+harm->vidi
+pub->pub_schema, "weblogic 10.3", pub_san
+pub_schema->ora_host_1, ora_host_2, BNS_switch
+etc
+etc.
+
+
+
+
+
+
+
