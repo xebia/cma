@@ -35,21 +35,22 @@ prog:   decl+ -> decl+
   ;
 
 decl: component isa ID -> ^(component ID)
-  | component ID ':' STRING  -> ^(component ID STRING)
+  | component ID 'is' STRING  -> ^(component ID STRING)
   | component relation component -> ^(component relation component)
   ;
   
 component : ID -> ^(ID)
   ;
 
-relation: 'depends on'
-  | 'is implemented by'
-  | 'is deployed on'
+relation returns [String value]
+  : 'depends' 'on' { $value = "depends on"; }
+  | 'is' 'implemented' 'by' { $value = "is implemented by"; }
+  | 'is' 'deployed' 'on' { $value = "is deployed on"; }
   ;
   
-isa : 'is'
-  | 'is a'
-  | 'is an'
+isa returns [String value]
+  : 'is' 'a' { $value = "is a"; }
+  | 'is' 'an'{ $value = "is a"; }
   ;
         
 ID  :   ('a'..'z'|'A'..'Z')('a'..'z'|'A'..'Z'|'0'..'9'|'.')* ;
