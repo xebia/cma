@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml 
+	xmlns="http://graphml.graphdrawing.org/xmlns"  
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns 
+	http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"
+	xmlns:y="http://www.yworks.com/xml/graphml"
+	>
+	<key for="node" id="d0" yfiles.type="nodegraphics"/>
+	<key attr.name="description" attr.type="string" for="node" id="d1"/>
+	<key for="edge" id="d2" yfiles.type="edgegraphics"/>
+	<key attr.name="description" attr.type="string" for="edge" id="d3"/>
+	<key for="graphml" id="d4" yfiles.type="resources"/>	
+	<graph id="cma" edgedefault="undirected">  
+#foreach($node in $root.allItems)
+		<node id="$node.id">
+		    <data key="d0">
+				<y:ShapeNode>
+					<y:Geometry height="30.0" width="30.0" x="0.0" y="0.0"/>
+					<y:Fill color="#CCCCFF" transparent="false"/>
+					<y:BorderStyle color="#000000" type="line" width="1.0"/>
+					<y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true">$node.id</y:NodeLabel>
+					<y:Shape type="rectangle"/>
+				</y:ShapeNode>
+		    </data>
+		</node>
+#end
+#set ( $count = 1 )
+#foreach($sourceNode in $root.allItems)
+#foreach($targetNode in $sourceNode.reachableIems)
+	    <edge id="e$count" source="$sourceNode.id" target="$targetNode.id">
+	    </edge>
+#set ( $count = $count + 1 )
+#end
+#end
+	</graph>
+</graphml>
