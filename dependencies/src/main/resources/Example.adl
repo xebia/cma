@@ -1,5 +1,5 @@
 MyApp.UI is a WebUIService
-MyApp.UI contextroot : "/myapp"
+MyApp.UI contextroot is "/myapp"
 
 MyApp.UI depends on LandelijkVerwijsIndex.ProxyWebService
 
@@ -9,7 +9,7 @@ MyApp.UI is implemented by MyApp.Application
 MyApp.Application is deployed on SGI.Portal
 
 LandelijkVerwijsIndex.WebService is a SOAPService
-LandelijkVerwijsIndex.WebService url : "https://koppelvlak.verwijsindex.nl/nta8023-2008/koppelvlakv2.asmx"
+LandelijkVerwijsIndex.WebService url is "https://koppelvlak.verwijsindex.nl/nta8023-2008/koppelvlakv2.asmx"
 
 LandelijkVerwijsIndex.ProxyWebService is a SOAPService
 LandelijkVerwijsIndex.ProxyWebService depends on LandelijkVerwijsIndex.WebService

@@ -1,12 +1,9 @@
 package com.xebia.dependencies;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,52 +20,51 @@ import org.antlr.runtime.tree.Tree;
 import com.xebia.xal.parser.xalLexer;
 import com.xebia.xal.parser.xalParser;
 
+import de.schlichtherle.truezip.file.TFile;
+import de.schlichtherle.truezip.file.TFileInputStream;
+
 public class ParserMain {
 
 	public static void main(String[] args) throws Exception {
 		ParserMain parserMain = new ParserMain();
 		parserMain.go(args);
 	}
-	
+
 	private void go(String[] args) throws Exception {
 
-		handleSingleFile("Example.adl");
-		
-		handleFolder("Archive");
+		handleSingleFile("src/main/resources/Example.adl");
+
+		handleFolder("src/main/resources/Archive.zip");
+		handleFolder("src/main/resources/Archive");
 
 	}
 
 	private void handleFolder(String folderName) throws URISyntaxException, IOException, RecognitionException {
-		URL resource = this.getClass().getClassLoader().getResource(folderName);
-		if (resource != null) {
-			File archiveFolder = new File(resource.toURI());
-			if (archiveFolder.exists() && archiveFolder.isDirectory()) {
-				Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees = new HashMap<String, SymbolTableAndTree>();
-				File[] allFilesInArchive = archiveFolder.listFiles();
-				for (File fileInArchive : allFilesInArchive) {
-					if (fileInArchive.getPath().endsWith("adl")) {
-						SymbolTableAndTree symbolTableAndTree = getSymbolTableAndTreeFromSingleFile(fileInArchive.getPath());
-						compositeSymbolTableAndTrees.put(fileInArchive.getPath(), symbolTableAndTree);
-					}
+		TFile archiveFolder = new TFile(folderName);
+		if (archiveFolder.exists() && (archiveFolder.isDirectory() || archiveFolder.isArchive())) {
+			Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees = new HashMap<String, SymbolTableAndTree>();
+			TFile[] allFilesInArchive = archiveFolder.listFiles();
+			for (TFile fileInArchive : allFilesInArchive) {
+				if (fileInArchive.getPath().endsWith("adl")) {
+					SymbolTableAndTree symbolTableAndTree = getSymbolTableAndTreeFromSingleFile(fileInArchive.getPath());
+					compositeSymbolTableAndTrees.put(fileInArchive.getPath(), symbolTableAndTree);
 				}
-				for (File fileInArchive : allFilesInArchive) {
-					if (fileInArchive.getPath().endsWith("adl")) {
-						 checkSingleFile(fileInArchive.getPath(), compositeSymbolTableAndTrees);
-					}
+			}
+			for (TFile fileInArchive : allFilesInArchive) {
+				if (fileInArchive.getPath().endsWith("adl")) {
+					checkSingleFile(fileInArchive.getPath(), compositeSymbolTableAndTrees);
 				}
- 			}
-		} else {
-			System.out.println("Can't read Archive");
+			}
 		}
 	}
-	
+
 	private SymbolTableAndTree getSymbolTableAndTreeFromSingleFile(String filename) throws IOException, RecognitionException {
 		CommonTree theTree = buildTree(filename);
-		
+
 		SymbolTable symbolTable = buildSymbolTable(theTree);
-		
+
 		printOverview(symbolTable);
-		
+
 		SymbolTableAndTree symbolTableAndTree = new SymbolTableAndTree(symbolTable, theTree);
 		return symbolTableAndTree;
 
@@ -81,11 +77,7 @@ public class ParserMain {
 		System.out.println("Handling file: " + filename);
 		System.out.println("");
 		InputStream in = null;
-		if (filename.startsWith("/")) {
-			in = new FileInputStream(new File(filename));
-		} else {
-			in = this.getClass().getClassLoader().getResourceAsStream(filename);
-		}
+		in = new TFileInputStream(new TFile(filename));
 		CharStream input = new ANTLRInputStream(in);
 
 		xalLexer lex = new xalLexer(input);
@@ -101,18 +93,17 @@ public class ParserMain {
 		Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees = new HashMap<String, SymbolTableAndTree>();
 		SymbolTableAndTree symbolTableAndTree = getSymbolTableAndTreeFromSingleFile(filename);
 		compositeSymbolTableAndTrees.put(filename, symbolTableAndTree);
-		
+
 		checkSingleFile(filename, compositeSymbolTableAndTrees);
 	}
-	
-	
 
 	private void checkSingleFile(String filename, Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees) {
 		List<SymbolTable> additionalSymbolTables = getAdditionalSymbolTables(filename, compositeSymbolTableAndTrees);
 		checkDefinition(compositeSymbolTableAndTrees.get(filename).getSymbolTable(), additionalSymbolTables);
 	}
 
-	private List<SymbolTable> getAdditionalSymbolTables(String filename, Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees) {
+	private List<SymbolTable> getAdditionalSymbolTables(String filename,
+			Map<String, SymbolTableAndTree> compositeSymbolTableAndTrees) {
 		List<SymbolTable> additionalSymbolTables = new ArrayList<SymbolTable>();
 		if (compositeSymbolTableAndTrees != null) {
 			for (String key : compositeSymbolTableAndTrees.keySet()) {
@@ -133,7 +124,7 @@ public class ParserMain {
 
 	private SymbolTable buildSymbolTable(CommonTree t) {
 		SymbolTable symbolTable = new SymbolTable();
-		
+
 		for (int childIndex = 0; childIndex < t.getChildCount(); childIndex++) {
 			Tree child = t.getChild(childIndex);
 			if (child.getChildCount() == 1) {
@@ -143,16 +134,18 @@ public class ParserMain {
 				symbolTable.getUsedTypes().add(typeAsString);
 				String childText = child.getText();
 				symbolTable.getDefinedComponents().add(childText);
-			} else if (child.getChildCount() == 2) {
+			} else if (child.getChildCount() >= 2) {
 				// collect used components
-				String relationText = child.getChild(0).getText();
-				String usedComponentText = child.getChild(1).getText();
-				if (relationText.equals("depends on")) {
+				if (child.getChildCount() >= 3 && "depends".equals(child.getChild(0).getText())
+						&& "on".equals(child.getChild(1).getText())) {
+					symbolTable.getRhsOfDependsOnComponents().add(child.getChild(2).getText());
+				} else if (child.getChildCount() >= 4 && "is".equals(child.getChild(0).getText())
+						&& "implemented".equals(child.getChild(1).getText()) && "by".equals(child.getChild(2).getText())) {
+					symbolTable.getRhsOfDependsOnComponents().add(child.getChild(3).getText());
+				} else if (child.getChildCount() >= 4 && "is".equals(child.getChild(0).getText())
+						&& "deployed".equals(child.getChild(1).getText()) && "on".equals(child.getChild(2).getText())) {
+					String usedComponentText = child.getChild(3).getText();
 					symbolTable.getRhsOfDependsOnComponents().add(usedComponentText);
-				} else if (relationText.equals("is implemented by")) {
-					symbolTable.getRhsOfIsImplementedByComponents().add(usedComponentText);
-				} else if (relationText.equals("is deployed on")) {
-					symbolTable.getRhsOfDeployedOnComponents().add(usedComponentText);
 					addLhsToAllItemsUnlessAlreadyDefined(symbolTable.getAllItems(), child.getText());
 					Item lhs = findItem(symbolTable.getAllItems(), child.getText());
 					addRhsToAllItemsUnlessAlreadyDefined(symbolTable.getAllItems(), usedComponentText);
@@ -178,7 +171,7 @@ public class ParserMain {
 		System.out.println("all components used at rhs of 'is deployed on':");
 		System.out.println(symbolTable.getRhsOfDeployedOnComponents());
 	}
-	
+
 	private Item findItem(Set<Item> allItems, String text) {
 		if (allItems == null || allItems.size() == 0) {
 			return null;
@@ -194,11 +187,11 @@ public class ParserMain {
 	private void addLhsToAllItemsUnlessAlreadyDefined(Set<Item> allItems, String text) {
 		addRhsOrLhsToAllItemsUnlessAlreadyDefined(allItems, text);
 	}
-	
+
 	private void addRhsToAllItemsUnlessAlreadyDefined(Set<Item> allItems, String text) {
 		addRhsOrLhsToAllItemsUnlessAlreadyDefined(allItems, text);
 	}
-	
+
 	private void addRhsOrLhsToAllItemsUnlessAlreadyDefined(Set<Item> allItems, String text) {
 		Item item = new Item(text);
 		if (!allItems.contains(item)) {
@@ -216,21 +209,23 @@ public class ParserMain {
 		}
 		boolean headerIsPrinted = false;
 		for (String component : symbolTable.getRhsOfDeployedOnComponents()) {
-			if (! symbolTable.getDefinedComponents().contains(component)) {
-				// see if a reachable item of the rhs is defined component. If so, we're OK
+			if (!symbolTable.getDefinedComponents().contains(component)) {
+				// see if a reachable item of the rhs is defined component. If
+				// so, we're OK
 				Item rhsAsItem = symbolTable.getRoot().lookupItemById(component);
 				Set<Item> reachableIems = rhsAsItem.getReachableIems();
 				if (!anyReachableItemIsDefined(reachableIems, symbolTable.getDefinedComponents())) {
-					if (! headerIsPrinted) {
+					if (!headerIsPrinted) {
 						System.out.println(header);
 						headerIsPrinted = true;
 					}
-					System.out.println("ERROR: " + component + " is used at the right hand side of a 'is deployed on' relation, but it is not defined");
+					System.out.println("ERROR: " + component
+							+ " is used at the right hand side of a 'is deployed on' relation, but it is not defined");
 				}
 			}
 		}
 	}
-	
+
 	private boolean anyReachableItemIsDefined(Set<Item> reachableIems, Set<String> definedComponents) {
 		if (reachableIems == null || reachableIems.size() == 0) {
 			return false;
@@ -251,13 +246,14 @@ public class ParserMain {
 		}
 		boolean headerIsPrinted = false;
 		for (String component : symbolTable.getRhsOfDependsOnComponents()) {
-			if (! symbolTable.getDefinedComponents().contains(component)) {
+			if (!symbolTable.getDefinedComponents().contains(component)) {
 				if (!additionalSymbolTablesContain(component, additionalSymbolTables)) {
-					if (! headerIsPrinted) {
+					if (!headerIsPrinted) {
 						System.out.println(header);
 						headerIsPrinted = true;
 					}
-					System.out.println("ERROR: " + component + " is used at the right hand side of a 'depends on' relation, but it is not defined");
+					System.out.println("ERROR: " + component
+							+ " is used at the right hand side of a 'depends on' relation, but it is not defined");
 				}
 			}
 		}
@@ -283,12 +279,13 @@ public class ParserMain {
 		}
 		boolean headerIsPrinted = false;
 		for (String component : symbolTable.getRhsOfIsImplementedByComponents()) {
-			if (! symbolTable.getDefinedComponents().contains(component)) {
-				if (! headerIsPrinted) {
+			if (!symbolTable.getDefinedComponents().contains(component)) {
+				if (!headerIsPrinted) {
 					System.out.println(header);
 					headerIsPrinted = true;
 				}
-				System.out.println("ERROR: " + component + " is used at the right hand side of a 'is implemented by' relation, but it is not defined");
+				System.out.println("ERROR: " + component
+						+ " is used at the right hand side of a 'is implemented by' relation, but it is not defined");
 			}
 		}
 	}
